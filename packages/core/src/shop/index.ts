@@ -31,17 +31,6 @@ export module Shop {
     async ({ name, slug }) => {
       const id = createID("shop");
       await createTransaction(async (tx) => {
-        // TODO: #7 Here's an example of doing an INSERT into
-        // the `shop` table. Pretty basic stuff! Just a reminder
-        // that this code is running in a Lambda Function behind our
-        // API Router. It's only allowed to hit our Aurora database
-        // (through the Data API) because we linked the database
-        // to our API earlier.
-        //
-        // As a fun exercise you could try removing the link from the
-        // the API (in infra/api.ts), running `sst dev` and observing
-        // what happens when you try to create a new shop from the web
-        // frontend app!
         const result = await tx
           .insert(shopTable)
           .values({ id, name, slug, active: true })

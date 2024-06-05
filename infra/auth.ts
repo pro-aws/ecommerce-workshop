@@ -6,7 +6,6 @@ import { secret } from "./secret";
 export const auth = new sst.aws.Auth("Auth", {
   authenticator: {
     url: true,
-    // TODO: #3 Same with the authenticator function.
     link: [secret.NeonDatabaseUrl, database, email],
     handler: "./packages/functions/src/auth.handler",
   },
