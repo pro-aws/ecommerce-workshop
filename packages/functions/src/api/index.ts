@@ -2,6 +2,7 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { logger } from "hono/logger";
 import { compress } from "hono/compress";
 import { handle, streamHandle } from "hono/aws-lambda";
+import { merchant } from "./merchant";
 
 const app = new OpenAPIHono();
 app.use("*", logger());
@@ -13,11 +14,18 @@ app.use("*", async (c, next) => {
   }
 });
 
+app.openAPIRegistry.registerComponent("securitySchemes", "Bearer", {
+  type: "http",
+  scheme: "bearer",
+});
+
 app.get("/", async (c) => {
   return c.json({
     message: "Hello, world!",
   });
 });
+
+const routes = app.route("/merchant", merchant);
 
 app.doc("/doc", () => ({
   openapi: "3.0.0",
@@ -27,4 +35,5 @@ app.doc("/doc", () => ({
   },
 }));
 
+export type AppType = typeof routes;
 export const handler = process.env.SST_LIVE ? handle(app) : streamHandle(app);

@@ -1,14 +1,14 @@
 import { apiRouter } from "./api";
+import { auth, authRouter } from "./auth";
 import { domain } from "./dns";
 
-// SOLUTION: #7 The `Nextjs` Component is built around
-// the OpenNext project (https://open-next.js.org/) and
-// it's an incredible open source effort to mimic the
-// infrastructure and behavior of NextJS apps running on Vercel.
 export const web = new sst.aws.Nextjs("WebApp", {
   path: "packages/web",
   domain: domain ? { name: "www." + domain } : undefined,
-  link: [apiRouter],
+  // TODO: #7 We need to link the `authRouter` to our web
+  // resource so that it can pull the URL at runtime. Look
+  // ma, no environment variables!
+  link: [apiRouter, authRouter, auth],
 });
 
 export const outputs = {

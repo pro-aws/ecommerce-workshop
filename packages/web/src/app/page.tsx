@@ -1,7 +1,11 @@
+import Link from "next/link";
 import { Metadata } from "next";
 import Image from "next/image";
-import { RocketIcon } from "@radix-ui/react-icons";
-import { Alert, AlertDescription, AlertTitle } from "@/components/alert";
+
+import { buttonVariants } from "@/components/button";
+import Routes from "@/lib/routes";
+import { cn } from "@/lib/utils";
+import { Session } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Peasy",
@@ -9,10 +13,11 @@ export const metadata: Metadata = {
 };
 
 import logo from "../images/logos/peasy-mark.svg";
-import { Resource } from "sst";
 
 export default async function LandingPage() {
-  const message = await fetch(Resource.ApiRouter.url).then((r) => r.text());
+  const session = await Session.get();
+  const email =
+    session?.type === "account" ? session.properties.email : undefined;
 
   return (
     <div className="grid min-h-screen w-full">
@@ -27,13 +32,33 @@ export default async function LandingPage() {
               <p className="text-sm text-muted-foreground">
                 Imagine that you're being sold really hard on Peasy right now.
               </p>
-              <Alert className="mt-5 text-left">
-                <RocketIcon className="h-4 w-4" />
-                <AlertTitle>From the API:</AlertTitle>
-                <AlertDescription>
-                  <code>{message}</code>
-                </AlertDescription>
-              </Alert>
+              {email ? (
+                <>
+                  <p className="mt-4 text-muted-foreground">
+                    Logged in as{" "}
+                    <span className="text-foreground">{email}</span>
+                  </p>
+                  <a
+                    href={Routes.signout}
+                    className={cn(
+                      buttonVariants({ variant: "default" }),
+                      "mt-2 min-w-64",
+                    )}
+                  >
+                    Signout
+                  </a>
+                </>
+              ) : (
+                <Link
+                  href={Routes.signin}
+                  className={cn(
+                    buttonVariants({ variant: "default" }),
+                    "mt-4 min-w-64",
+                  )}
+                >
+                  Signin
+                </Link>
+              )}
             </div>
           </div>
         </main>
