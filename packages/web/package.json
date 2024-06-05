@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "sst dev next dev",
+    "dev": "sst dev --silent \"next dev --port 3000\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

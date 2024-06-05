@@ -12,14 +12,6 @@ import logo from "../images/logos/peasy-mark.svg";
 import { Resource } from "sst";
 
 export default async function LandingPage() {
-  // TODO: #8 Anytime we "link" a resource to another in SST,
-  // it becomes available in the `Resource` object at runtime.
-  // It'll always be named just as you named the component
-  // (in this case, `ApiRouter`). Any given resource can expose
-  // certain properties through this linking mechanism. `Router`
-  // exposes it's URL, and we use that to call our API without
-  // having to mess with environment variables. One of my favorite
-  // features of SST.
   const message = await fetch(Resource.ApiRouter.url).then((r) => r.text());
 
   return (

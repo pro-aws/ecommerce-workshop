@@ -1,7 +1,7 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { logger } from "hono/logger";
 import { compress } from "hono/compress";
-import { handle } from "hono/aws-lambda";
+import { handle, streamHandle } from "hono/aws-lambda";
 
 const app = new OpenAPIHono();
 app.use("*", logger());
@@ -13,8 +13,6 @@ app.use("*", async (c, next) => {
   }
 });
 
-// TODO: #5 In this project, we're using Hono to define our API
-// and we're starting with a simple "Hello, world!" response at the root.
 app.get("/", async (c) => {
   return c.json({
     message: "Hello, world!",
@@ -29,6 +27,4 @@ app.doc("/doc", () => ({
   },
 }));
 
-// TODO: #6 We export a handler for our API. This is the entry point for our
-// Lambda Function. `handle` comes from Hono, it's an adapter for AWS Lambda.
-export const handler = handle(app);
+export const handler = process.env.SST_LIVE ? handle(app) : streamHandle(app);
