@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
 
   const account = await getAccount();
   if (typeof account === "string") return redirect(Routes.home);
+  if (!account.shops) return redirect(Routes.shop.new);
 
-  return redirect(Routes.home);
+  return redirect(await Routes.shop.index());
 }

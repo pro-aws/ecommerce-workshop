@@ -2,10 +2,12 @@ import { AuthHandler } from "sst/auth";
 
 import { CodeAdapter } from "sst/auth/adapter";
 import { sessions } from "./sessions";
+import { Account } from "@peasy-store/core/account/index";
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
 import { Resource } from "sst";
 import { handle } from "hono/aws-lambda";
 import { z } from "zod";
+import { withActor } from "@peasy-store/core/actor";
 
 const ses = new SESv2Client({});
 
@@ -71,10 +73,24 @@ const app = AuthHandler({
         console.log(input);
         if (input.provider === "code") {
           const email = input.claims.email!.toLowerCase();
+          let account = await Account.fromEmail(email);
+          if (!account) {
+            const accountID = await withActor(
+              { type: "public", properties: {} },
+              async () => {
+                return Account.create(email);
+              },
+            );
+            account = {
+              id: accountID,
+              email,
+            };
+          }
           return ctx.session({
             type: "account",
             properties: {
-              email,
+              accountID: account.id,
+              email: account.email,
             },
           });
         }

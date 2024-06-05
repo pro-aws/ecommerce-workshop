@@ -25,9 +25,19 @@ declare module "sst" {
       type: "sst.aws.Router"
       url: string
     }
+    Database: {
+      clusterArn: string
+      database: string
+      secretArn: string
+      type: "sst.aws.Postgres"
+    }
     Email: {
       sender: string
       type: "sst.aws.Email"
+    }
+    Store: {
+      type: "sst.aws.Nextjs"
+      url: string
     }
     WebApp: {
       type: "sst.aws.Nextjs"

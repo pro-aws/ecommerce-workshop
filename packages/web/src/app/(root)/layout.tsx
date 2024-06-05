@@ -12,7 +12,7 @@ export default async function AuthLayout({
       <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
         <div className="absolute inset-0 bg-zinc-900" />
         <div className="relative z-20 flex items-center text-lg font-medium">
-          <Link href={Routes.home}>
+          <Link href={await Routes.shop.index()}>
             <Logo className="w-36 text-white" />
           </Link>
         </div>
@@ -28,7 +28,7 @@ export default async function AuthLayout({
         </div>
       </div>
       <div className="lg:p-8">
-        <Link href={Routes.home}>
+        <Link href={await Routes.shop.index()}>
           <Mark className="mx-auto w-14 pb-4 lg:hidden" />
         </Link>
         {children}

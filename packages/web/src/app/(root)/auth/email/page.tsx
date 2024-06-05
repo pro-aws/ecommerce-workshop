@@ -12,7 +12,8 @@ export const metadata: Metadata = {
 
 export default async function EmailPage() {
   const session = await Session.get();
-  if (session && session.type === "account") return redirect(Routes.home);
+  if (session && session.type === "account")
+    return redirect(await Routes.shop.index());
 
   return (
     <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">

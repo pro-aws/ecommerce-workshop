@@ -38,6 +38,15 @@ export default async function LandingPage() {
                     Logged in as{" "}
                     <span className="text-foreground">{email}</span>
                   </p>
+                  <Link
+                    href={await Routes.shop.index()}
+                    className={cn(
+                      buttonVariants({ variant: "default" }),
+                      "mt-4 min-w-64",
+                    )}
+                  >
+                    Dashboard
+                  </Link>
                   <a
                     href={Routes.signout}
                     className={cn(

@@ -2,15 +2,20 @@ import { Resource } from "sst";
 import { ClientResponse, hc } from "hono/client";
 import type { AppType } from "@peasy-store/functions/api";
 import { Session } from "@/lib/session";
+import { headers } from "next/headers";
 
 export const t = hc<AppType>(Resource.ApiRouter.url);
 
 export const client = () => {
+  const headersList = headers();
+  const shop = headersList.get("x-peasy-shop");
+
   const token = Session.token();
   return hc<AppType>(Resource.ApiRouter.url, {
     fetch,
     headers: {
       Authorization: `Bearer ${token}`,
+      ...(shop && { "x-peasy-shop": shop }),
     },
   });
 };

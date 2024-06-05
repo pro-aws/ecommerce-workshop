@@ -1,13 +1,10 @@
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
+import { Account } from "@peasy-store/core/account/index";
 import { assertActor } from "@peasy-store/core/actor";
 import { NotFound, Result } from "../common";
 
 export module AccountsApi {
-  export const AccountSchema = z
-    .object({
-      email: z.string().email(),
-    })
-    .openapi("Account");
+  export const AccountSchema = Account.Info.openapi("Account");
 
   export const route = new OpenAPIHono().openapi(
     createRoute({
@@ -22,7 +19,9 @@ export module AccountsApi {
       const account = assertActor("account");
       return c.json({
         result: {
+          id: account.properties.accountID,
           email: account.properties.email,
+          shops: await Account.shops(),
         },
       });
     },

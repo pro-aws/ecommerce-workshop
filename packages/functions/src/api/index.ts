@@ -2,6 +2,7 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { logger } from "hono/logger";
 import { compress } from "hono/compress";
 import { handle, streamHandle } from "hono/aws-lambda";
+import { customer } from "./customer";
 import { merchant } from "./merchant";
 
 const app = new OpenAPIHono();
@@ -25,7 +26,7 @@ app.get("/", async (c) => {
   });
 });
 
-const routes = app.route("/merchant", merchant);
+const routes = app.route("/customer", customer).route("/merchant", merchant);
 
 app.doc("/doc", () => ({
   openapi: "3.0.0",
