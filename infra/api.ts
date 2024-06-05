@@ -1,10 +1,11 @@
 import { domain } from "./dns";
 import { auth } from "./auth";
+import { email } from "./email";
 
 const api = new sst.aws.Function("Api", {
   url: true,
   streaming: !$dev,
-  link: [auth],
+  link: [email, auth],
   handler: "./packages/functions/src/api/index.handler",
 });
 
