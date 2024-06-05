@@ -1,0 +1,25 @@
+{
+  "name": "@peasy-store/functions",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./*.ts": "./src/*.ts",
+    "./*": [
+      "./src/*/index.ts",
+      "./src/*.ts"
+    ]
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/zod-openapi": "0.11.0",
+    "hono": "4.0.1",
+    "valibot": "0.31.0-rc.11",
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "@tsconfig/node20": "20.1.4"
+  }
+}

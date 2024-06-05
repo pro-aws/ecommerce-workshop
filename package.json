@@ -1,0 +1,17 @@
+{
+  "name": "pro-aws/ecommerce-workshop",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "sst dev",
+    "sso": "aws sso login --sso-session=proaws --no-browser"
+  },
+  "workspaces": ["packages/*"],
+  "dependencies": {
+    "sst": "3.0.32"
+  },
+  "devDependencies": {
+    "@tsconfig/node20": "20.1.4",
+    "typescript": "5.4.5"
+  },
+  "author": "Adam Elmore <me@adam.dev> (https://adam.dev/)"
+}
