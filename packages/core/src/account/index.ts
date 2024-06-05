@@ -43,9 +43,6 @@ export module Account {
       const id = createID("account");
       await tx.insert(accountTable).values({ id, email });
       await createTransactionEffect(() =>
-        // SOLUTION: #8 We publish the event to the bus, providing
-        // the bus information from `Resource.Bus`. We also pass
-        // in our event defined above as well as the `id` and `email`.
         bus.publish(Resource.Bus, Events.Created, { id, email }),
       );
       return id;

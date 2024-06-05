@@ -1,5 +1,5 @@
 import { and, eq, desc, sql, isNull } from "drizzle-orm";
-import { productTable } from "./product.sql";
+import { productTable, productsToFilesTable } from "./product.sql";
 import { z } from "zod";
 import { fn } from "../util/fn";
 import { createID, createSlug } from "../util/id";
@@ -16,6 +16,8 @@ import { event } from "../event";
 import { bus } from "sst/aws/bus";
 import { Resource } from "sst";
 import { Shop } from "../shop";
+import { fileTable } from "../file/file.sql";
+import { File } from "../file";
 import { shopTable } from "../shop/shop.sql";
 
 export module Product {
@@ -35,6 +37,14 @@ export module Product {
     ),
   };
 
+  export const Image = z.object({
+    id: z.string(),
+    url: z.string(),
+    altText: z.string().optional(),
+    width: z.number().optional(),
+    height: z.number().optional(),
+  });
+
   export const Info = z.object({
     id: z.string(),
     name: z.string().min(1),
@@ -45,14 +55,22 @@ export module Product {
       .min(3, "Must be at least 3 characters")
       .regex(/^[a-z0-9\-]+$/, "Must be lowercase, URL friendly."),
     status: z.enum(["draft", "active", "archived"]),
+    images: Image.array().optional(),
     createdAt: z.string(),
   });
 
   export type Info = z.infer<typeof Info>;
 
   export const create = fn(
-    Info.pick({ name: true, description: true, price: true, status: true }),
-    async ({ name, description, price, status }) => {
+    Info.pick({
+      name: true,
+      description: true,
+      price: true,
+      status: true,
+    }).extend({
+      images: z.string().array().optional(),
+    }),
+    async ({ name, description, price, status, images }) => {
       const id = createID("product");
       const slug = createSlug(name);
       const shopID = Shop.use();
@@ -65,14 +83,15 @@ export module Product {
             name,
             description,
             slug,
-            price,
             availableForSale: status === "active",
+            price,
           })
           .onConflictDoNothing({
             target: [productTable.shopID, productTable.slug],
           });
         const rowCount = getRowCount(result);
         if (!rowCount) throw new ProductExistsError(slug);
+        await updateImages({ id, images });
         await createTransactionEffect(() =>
           bus.publish(Resource.Bus, Events.Created, {
             shopID,
@@ -91,10 +110,11 @@ export module Product {
       description: true,
       price: true,
       status: true,
-    }),
+    }).extend({ images: z.string().array().optional() }),
     async (input) => {
-      const { id, status, ...rest } = input;
+      const { id, status, images, ...rest } = input;
       await useTransaction(async (tx) => {
+        await updateImages({ id, images });
         return tx
           .update(productTable)
           .set({
@@ -126,7 +146,12 @@ export module Product {
     tx
       .select()
       .from(productTable)
-      .innerJoin(shopTable, eq(productTable.shopID, shopTable.id));
+      .innerJoin(shopTable, eq(productTable.shopID, shopTable.id))
+      .leftJoin(
+        productsToFilesTable,
+        eq(productTable.id, productsToFilesTable.productID),
+      )
+      .leftJoin(fileTable, eq(productsToFilesTable.fileID, fileTable.id));
 
   export const fromShopID = fn(Shop.Info.shape.id, (id) =>
     useTransaction(async (tx) => {
@@ -196,9 +221,27 @@ export module Product {
     }),
   );
 
+  export const updateImages = fn(
+    Info.pick({ id: true }).extend({ images: z.string().array().optional() }),
+    (input) =>
+      useTransaction(async (tx) => {
+        await tx
+          .delete(productsToFilesTable)
+          .where(eq(productsToFilesTable.productID, input.id));
+        if (input.images?.length) {
+          await tx
+            .insert(productsToFilesTable)
+            .values(
+              input.images.map((fileID) => ({ productID: input.id, fileID })),
+            );
+        }
+      }),
+  );
+
   function serialize(
     group: {
       product: typeof productTable.$inferSelect;
+      file: typeof fileTable.$inferSelect | null;
     }[],
   ): z.infer<typeof Info> {
     const product = group[0].product;
@@ -214,6 +257,9 @@ export module Product {
           ? "archived"
           : "draft",
       createdAt: product.timeCreated.toISOString(),
+      images: group
+        .filter((item) => item.file)
+        .map((item) => ({ ...File.serialize(item.file!) })),
     };
   }
 }

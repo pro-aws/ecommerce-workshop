@@ -9,6 +9,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { dollar, id, timestamps, uuid } from "../drizzle/types";
 import { shopIndexes } from "../shop/shop.sql";
+import { fileTable } from "../file/file.sql";
 import { collectionTable } from "../collection/collection.sql";
 
 export const productTable = pgTable(
@@ -48,6 +49,30 @@ export const productsToCollectionsTable = pgTable(
     collection: foreignKey({
       foreignColumns: [collectionTable.id],
       columns: [table.collectionID],
+    }),
+  }),
+);
+
+export const productsToFilesTable = pgTable(
+  "products_to_files",
+  {
+    ...timestamps,
+    productID: uuid("product_id")
+      .notNull()
+      .references(() => productTable.id),
+    fileID: uuid("file_id")
+      .notNull()
+      .references(() => fileTable.id),
+  },
+  (table) => ({
+    primary: primaryKey({ columns: [table.productID, table.fileID] }),
+    product: foreignKey({
+      foreignColumns: [productTable.id],
+      columns: [table.productID],
+    }),
+    file: foreignKey({
+      foreignColumns: [fileTable.id],
+      columns: [table.fileID],
     }),
   }),
 );

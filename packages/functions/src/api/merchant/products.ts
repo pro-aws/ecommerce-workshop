@@ -3,6 +3,7 @@ import { Product } from "@peasy-store/core/product/index";
 import { assertActor } from "@peasy-store/core/actor";
 import { Body, NotFound, Result } from "../common";
 import { HTTPException } from "hono/http-exception";
+import { File } from "@peasy-store/core/file/index";
 
 export module ProductsApi {
   export const ProductSchema = Product.Info.openapi("Product");
@@ -51,7 +52,8 @@ export module ProductsApi {
             id: true,
             slug: true,
             createdAt: true,
-          }),
+            images: true,
+          }).extend({ images: File.Info.shape.id.array().optional() }),
         ),
         responses: {
           200: Result(ProductSchema, "Returns product"),
@@ -85,7 +87,8 @@ export module ProductsApi {
             id: true,
             slug: true,
             createdAt: true,
-          }),
+            images: true,
+          }).extend({ images: File.Info.shape.id.array().optional() }),
         ),
         responses: {
           200: Result(

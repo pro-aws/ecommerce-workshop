@@ -29,6 +29,14 @@ declare module "sst" {
       name: string
       type: "sst.aws.Bus"
     }
+    CdnBucket: {
+      name: string
+      type: "sst.aws.Bucket"
+    }
+    CdnRouter: {
+      type: "sst.aws.Router"
+      url: string
+    }
     Database: {
       clusterArn: string
       database: string
@@ -62,7 +70,7 @@ declare module "sst" {
       name: string
       type: "stripe.index/product.Product"
     }
-    StripeSecretNew: {
+    StripeSecret: {
       type: "sst.sst.Secret"
       value: string
     }

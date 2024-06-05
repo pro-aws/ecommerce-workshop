@@ -120,6 +120,7 @@ export const updateProduct = cache(
   async (params: {
     id: string;
     name: string;
+    images: string[];
     description?: string | null | undefined;
     price: number;
     status: "active" | "draft" | "archived";
@@ -129,6 +130,7 @@ export const updateProduct = cache(
         param: { id: params.id },
         json: {
           name: params.name,
+          images: params.images,
           description: params.description || undefined,
           price: params.price,
           status: params.status,
@@ -147,9 +149,19 @@ export const updateProduct = cache(
   },
 );
 
+export const createFile = cache(
+  async (props: InferRequestType<typeof t.merchant.files.$post>["json"]) => {
+    const res = await client().merchant.files.$post({
+      json: props,
+    });
+    return handleResponse(res);
+  },
+);
+
 type ApiCall = (...args: any) => Promise<any>;
 type ApiResponse<T extends ApiCall> = Exclude<Awaited<ReturnType<T>>, string>;
 
 export type Account = ApiResponse<typeof getAccount>;
 export type Shop = ApiResponse<typeof defaultShop>;
 export type Product = ApiResponse<typeof getProduct>;
+export type Image = ApiResponse<typeof createFile>;

@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { cn } from "@/lib/utils";
+import { cn, getImageDimensions } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/button";
 import {
   Form,
@@ -17,10 +18,15 @@ import {
   FormMessage,
 } from "@/components/form";
 import { Input } from "@/components/input";
-import { Product, createProduct, updateProduct } from "@/app/actions";
+import {
+  Product,
+  createFile,
+  createProduct,
+  updateProduct,
+} from "@/app/actions";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Star, Trash2, Upload } from "lucide-react";
 import { Badge } from "@/components/badge";
 import {
   Card,
@@ -48,6 +54,7 @@ import {
   AlertDialogTitle,
 } from "@/components/alert-dialog";
 import { toast } from "@/components/use-toast";
+import { Icons } from "@/components/icons";
 
 interface ProductFormProps extends React.HTMLAttributes<HTMLDivElement> {
   mode: "create" | "update";
@@ -62,6 +69,16 @@ const formSchema = z.object({
   status: z.enum(["draft", "active", "archived"], {
     message: "Must choose a status",
   }),
+  images: z
+    .object({
+      optimisticUrl: z.string().optional(),
+      id: z.string(),
+      url: z.string(),
+      altText: z.string().optional(),
+      width: z.number().optional(),
+      height: z.number().optional(),
+    })
+    .array(),
 });
 
 export function ProductForm({
@@ -80,14 +97,69 @@ export function ProductForm({
       description: product.description || "",
       status: product.status || "draft",
       price: product.price ? product.price / 100 : undefined,
+      images: product.images || [],
     },
   });
+  const { fields, append, remove, move } = useFieldArray({
+    name: "images",
+    control: form.control,
+  });
+  const [isUploading, setIsUploading] = React.useState(false);
 
-  const isBusy = form.formState.isLoading || form.formState.isSubmitting;
+  const isBusy =
+    form.formState.isLoading || form.formState.isSubmitting || isUploading;
 
   async function handleDiscard() {
     form.reset(product);
   }
+
+  const handleFileChosen = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (!event.target.files) return;
+    setIsUploading(true);
+
+    const files = Array.from(event.target.files);
+    await Promise.all(
+      files.map(async (file) => {
+        const { width, height, dataURL } = await getImageDimensions(file);
+        // TODO: #7 This is calling our API which ultimately
+        // runs the code we wrote earlier to generate a presigned URL...
+        const result = await createFile({
+          filename: file.name,
+          contentType: file.type,
+          width,
+          height,
+        });
+        if (typeof result === "string") {
+          toast({
+            title: "Error uploading image",
+            description: result,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Optimistically append the image to the form
+        const optimisticImage = { ...result, optimisticUrl: dataURL };
+        append(optimisticImage);
+
+        // #8 ... and here we do a PUT with our file contents
+        // to the `uploadUrl` returned from the API. Voila!
+        // Upload the file to the S3 bucket
+        await fetch(result.uploadUrl, {
+          body: file,
+          method: "PUT",
+          headers: {
+            "Content-Type": file.type,
+            "Content-Disposition": `inline; filename="${file.name}"`,
+          },
+        });
+      }),
+    );
+
+    setIsUploading(false);
+  };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     form.clearErrors();
@@ -96,12 +168,14 @@ export function ProductForm({
     if (props.mode === "create") {
       result = await createProduct({
         ...values,
+        images: values.images.map((image) => image.id),
         price: values.price * 100,
       });
     } else {
       result = await updateProduct({
         ...values,
         id: product.id,
+        images: values.images.map((image) => image.id),
         price: values.price * 100,
       });
     }
@@ -312,6 +386,108 @@ export function ProductForm({
                             <FormMessage />
                           </FormItem>
                         )}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="overflow-hidden">
+                <CardHeader>
+                  <CardTitle>Product Images</CardTitle>
+                  <CardDescription>
+                    Show your product off with high-quality images. Or whatever
+                    you have available.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-2">
+                    {fields.map((field, index) => (
+                      <div
+                        className={cn(index === 0 && "col-span-2")}
+                        key={field.id}
+                      >
+                        <FormField
+                          control={form.control}
+                          name={`images.${index}`}
+                          render={({ field }) => (
+                            <FormItem className="relative space-y-0">
+                              <FormLabel className="sr-only">Images</FormLabel>
+                              <FormControl>
+                                <div className="group relative">
+                                  <Image
+                                    alt={field.value.altText || "Product image"}
+                                    className={cn(
+                                      index === 0 && "col-span-2",
+                                      "w-full rounded-md",
+                                      !field.value.width &&
+                                        "aspect-square object-cover",
+                                    )}
+                                    layout="responsive"
+                                    width={field.value.width || 300}
+                                    height={field.value.height || 300}
+                                    src={
+                                      field.value.optimisticUrl ??
+                                      field.value.url
+                                    }
+                                  />
+                                  <div className="absolute inset-0 hidden bg-background/70 group-hover:block" />
+                                  <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 gap-2 group-hover:flex">
+                                    <Button
+                                      type="button"
+                                      variant="destructive"
+                                      size="icon"
+                                      onClick={() => remove(index)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                    {index !== 0 && (
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => move(index, 0)}
+                                      >
+                                        <Star className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    ))}
+                    <div
+                      className={cn(
+                        fields.length === 0 && "col-span-2",
+                        "relative flex aspect-square w-full items-center justify-center rounded-md border border-dashed focus-within:outline-none focus-within:ring-1 focus-within:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+                      )}
+                    >
+                      {isUploading ? (
+                        <Icons.spinner
+                          className={cn(
+                            fields.length === 0 ? "h-6 w-6" : "h-4 w-4",
+                            "animate-spin text-muted-foreground",
+                          )}
+                        />
+                      ) : (
+                        <Upload
+                          className={cn(
+                            fields.length === 0 ? "h-6 w-6" : "h-4 w-4",
+                            "text-muted-foreground",
+                          )}
+                        />
+                      )}
+                      <span className="sr-only">Upload</span>
+                      <input
+                        disabled={isUploading}
+                        onChange={handleFileChosen}
+                        type="file"
+                        className="absolute inset-0 opacity-0"
+                        accept="image/*"
+                        multiple={true}
                       />
                     </div>
                   </div>
