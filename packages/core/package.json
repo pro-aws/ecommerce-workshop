@@ -18,6 +18,7 @@
     "@types/luxon": "3.4.2"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.588.0",
     "@aws-sdk/client-rds-data": "3.577.0",
     "@aws-sdk/client-s3": "^3.583.0",
     "@aws-sdk/client-sesv2": "^3.577.0",
