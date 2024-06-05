@@ -123,5 +123,39 @@ export module ProductsApi {
         await Product.remove(c.req.param("id"));
         return c.json({ result: { status: "success" as const } }, 200);
       },
+    )
+    .openapi(
+      createRoute({
+        method: "post",
+        path: "/description",
+        request: Body(
+          Product.Info.pick({
+            name: true,
+            description: true,
+            price: true,
+          })
+            .partial({
+              name: true,
+              description: true,
+              price: true,
+            })
+            .extend({
+              prompt: z.string(),
+              tone: z.string(),
+            }),
+        ),
+        responses: {
+          200: Result(
+            z.object({ description: z.string() }),
+            "Returns generated description",
+          ),
+        },
+      }),
+      async (c) => {
+        assertActor("user");
+        const body = c.req.valid("json");
+        const description = await Product.generateDescription(body);
+        return c.json({ result: { description } }, 200);
+      },
     );
 }

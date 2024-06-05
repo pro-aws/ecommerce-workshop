@@ -39,9 +39,6 @@ export module File {
             ? "media"
             : undefined;
         const path = `${prefix ? prefix + "/" : ""}${id}/${filename}`;
-        // SOLUTION: #3 We use `getSignedUrl` to get a presigned URL
-        // for a PutObject operation and pass it our Bucket name and
-        // the Key (path) we want to upload to.
         const uploadUrl = await getSignedUrl(
           s3,
           new PutObjectCommand({
@@ -113,8 +110,6 @@ export module File {
   ): z.infer<typeof Info> {
     return {
       id: input.id,
-      // SOLUTION: #4 `Resource.CdnRouter.url` has our
-      // Router's URL because we linked it to our API function.
       url: `${Resource.CdnRouter.url}/${input.path}`,
       filename: input.filename,
       contentType: input.contentType,

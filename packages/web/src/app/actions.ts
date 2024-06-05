@@ -158,6 +158,19 @@ export const createFile = cache(
   },
 );
 
+export const generateProductDescription = cache(
+  async (
+    props: InferRequestType<
+      typeof t.merchant.products.description.$post
+    >["json"],
+  ) => {
+    const res = await client().merchant.products.description.$post({
+      json: props,
+    });
+    return handleResponse(res);
+  },
+);
+
 type ApiCall = (...args: any) => Promise<any>;
 type ApiResponse<T extends ApiCall> = Exclude<Awaited<ReturnType<T>>, string>;
 

@@ -55,6 +55,7 @@ import {
 } from "@/components/alert-dialog";
 import { toast } from "@/components/use-toast";
 import { Icons } from "@/components/icons";
+import { AiDescForm } from "./ai-desc-form";
 
 interface ProductFormProps extends React.HTMLAttributes<HTMLDivElement> {
   mode: "create" | "update";
@@ -100,7 +101,7 @@ export function ProductForm({
       images: product.images || [],
     },
   });
-  const { fields, append, remove, move } = useFieldArray({
+  const { fields, append, remove, move, update } = useFieldArray({
     name: "images",
     control: form.control,
   });
@@ -267,7 +268,21 @@ export function ProductForm({
                       name="description"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Description</FormLabel>
+                          <div className="flex items-center justify-between">
+                            <FormLabel>Description</FormLabel>
+                            <AiDescForm
+                              product={product}
+                              name={form.getValues("name")}
+                              description={form.getValues("description")}
+                              price={Number(form.getValues("price") ?? 0)}
+                              onGenerated={(desc) => {
+                                form.setValue("description", desc);
+                                form.setFocus("description", {
+                                  shouldSelect: true,
+                                });
+                              }}
+                            />
+                          </div>
                           <FormControl>
                             <Textarea
                               autoCapitalize="none"

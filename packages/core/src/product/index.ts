@@ -20,6 +20,11 @@ import { fileTable } from "../file/file.sql";
 import { File } from "../file";
 import { shopTable } from "../shop/shop.sql";
 
+// TODO: #1 We need to install (via pnpm) and import the
+// AWS SDK (v3) BedrockRuntimeClient and instantiate it
+// to interact with the Bedrock API.
+// `pnpm install @aws-sdk/client-bedrock-runtime`
+
 export module Product {
   export class ProductExistsError extends HTTPException {
     constructor(slug: string) {
@@ -236,6 +241,67 @@ export module Product {
             );
         }
       }),
+  );
+
+  export const generateDescription = fn(
+    Info.pick({
+      name: true,
+      description: true,
+      price: true,
+    })
+      .partial({ name: true, description: true, price: true })
+      .extend({
+        prompt: z.string(),
+        tone: z.string(),
+      }),
+    async (input) => {
+      const content = `
+You are a product marketing expert.
+You are tasked with writing a product description for a product with the below metadata (may be incomplete).
+
+Name: ${input.name}
+Current Description: ${input.description}
+Price: ${input.price ? "$" + (input.price / 100).toFixed(2) : ""}
+
+The user provided the following prompt providing additional detail about the product: "${input.prompt}".
+The product description should have a ${input.tone} tone.
+Don't actually include the product price in the generated description, I just wanted you to have it for context.
+Keep the generated description to a maximum of 2-3 sentences.
+
+It is critical that your response contains ONLY the suggested product description, no other explanation, no outer quotation marks.`.trim();
+
+      // TODO: #2 Now it's time to send a request to Bedrock to generate
+      // a product description. The Bedrock Runtime API includes an
+      // InvokeModel action. I've already prepared the `content` for you above,
+      // but feel free to change it up and make it better!
+      // https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_InvokeModel.html
+
+      // We can choose any of the base models that we have access to,
+      // but let's go with Claude v3 Haiku as it's low-cost and more than capable.
+      // For reference, Claude model IDs in Bedrock:
+      // - Haiku: 'anthropic.claude-3-haiku-20240307-v1:0'
+      // - Sonnet: 'anthropic.claude-3-sonnet-20240229-v1:0'
+      // - Opus: 'anthropic.claude-3-opus-20240229-v1:0'
+      // https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html
+
+      // Once we've selected a model, we can then find docs on how
+      // to shape the `body` key of our API request to Bedrock.
+      // Let's use the Anthropic Claude Messages API to generate our
+      // product description.
+      // https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters.html
+
+      // Once we've sent our request to Bedrock, we parse the response and
+      // extract the description before returning it.
+      const description = "Placeholder description"; // replace this!
+      return description.trim();
+
+      // NOTE: In the last week, AWS added a new "Converse API" that
+      // simplifies the process of invoking Bedrock models and adds
+      // consistency so you can easily swap out different models from
+      // different vendors. Feel free to use this API instead of "InvokeModel"
+      // and you may have an easier time than I did, even!
+      // https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html
+    },
   );
 
   function serialize(

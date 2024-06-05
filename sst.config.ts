@@ -29,6 +29,9 @@ export default $config({
         return [
           ...(permissions || []),
           { actions: ["ses:*"], resources: ["*"] },
+          // TODO: #3 We need to give our functions permissions to
+          // invoke Bedrock models. Specifically, they'll need
+          // access to the bedrock:InvokeModel action.
         ];
       });
     });
