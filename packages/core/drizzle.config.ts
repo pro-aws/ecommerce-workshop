@@ -13,7 +13,6 @@ export default defineConfig({
     : {
         driver: "aws-data-api",
         dbCredentials: {
-          // SOLUTION: #5 Predicatable based on the last change.
           database: Resource.Database.database,
           secretArn: Resource.Database.secretArn,
           resourceArn: Resource.Database.clusterArn,

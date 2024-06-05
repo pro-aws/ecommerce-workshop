@@ -1,11 +1,12 @@
 import { apiRouter } from "./api";
 import { auth, authRouter } from "./auth";
 import { domain } from "./dns";
+import { annualPrice, monthlyPrice, product } from "./stripe";
 
 export const web = new sst.aws.Nextjs("WebApp", {
   path: "packages/web",
   domain: domain ? { name: "www." + domain } : undefined,
-  link: [apiRouter, authRouter, auth],
+  link: [apiRouter, authRouter, auth, product, monthlyPrice, annualPrice],
 });
 
 export const store = new sst.aws.Nextjs("Store", {

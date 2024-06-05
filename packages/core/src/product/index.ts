@@ -6,11 +6,15 @@ import { createID, createSlug } from "../util/id";
 import {
   useTransaction,
   createTransaction,
+  createTransactionEffect,
   TxOrDb,
   getRowCount,
 } from "../drizzle/transaction";
 import { HTTPException } from "hono/http-exception";
 import { map, pipe, values, groupBy, first } from "remeda";
+import { event } from "../event";
+import { bus } from "sst/aws/bus";
+import { Resource } from "sst";
 import { Shop } from "../shop";
 import { shopTable } from "../shop/shop.sql";
 
@@ -20,6 +24,16 @@ export module Product {
       super(400, { message: `There is already a product named "${slug}"` });
     }
   }
+
+  export const Events = {
+    Created: event(
+      "product.created",
+      z.object({
+        shopID: z.string().min(1),
+        productID: z.string().min(1),
+      }),
+    ),
+  };
 
   export const Info = z.object({
     id: z.string(),
@@ -59,6 +73,12 @@ export module Product {
           });
         const rowCount = getRowCount(result);
         if (!rowCount) throw new ProductExistsError(slug);
+        await createTransactionEffect(() =>
+          bus.publish(Resource.Bus, Events.Created, {
+            shopID,
+            productID: id,
+          }),
+        );
       });
       return { id, slug };
     },

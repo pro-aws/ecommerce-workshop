@@ -5,6 +5,7 @@ import { client, handleResponse, t } from "@/lib/api";
 import { redirect } from "next/navigation";
 import { Resource } from "sst";
 import { headers } from "next/headers";
+import Routes from "@/lib/routes";
 import { InferRequestType } from "hono/client";
 
 export const signin = async (email: string) => {
@@ -41,15 +42,25 @@ export const defaultShop = cache(async () => {
 });
 
 export const createShop = cache(
-  async (params: { name: string; slug: string; baseUrl: string }) => {
+  async (params: {
+    name: string;
+    slug: string;
+    annual?: boolean;
+    baseUrl: string;
+  }) => {
     const res = await client().merchant.shops.$post({
       json: {
         name: params.name,
         slug: params.slug,
+        annual: params.annual,
+        successUrl: params.baseUrl + (await Routes.shop.index(params.slug)),
+        cancelUrl: params.baseUrl + Routes.shop.new,
       },
     });
     const handled = await handleResponse(res);
     if (typeof handled === "string") return handled;
+
+    if (handled.url) return redirect(handled.url);
     return handled;
   },
 );

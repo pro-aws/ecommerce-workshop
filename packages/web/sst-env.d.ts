@@ -25,6 +25,10 @@ declare module "sst" {
       type: "sst.aws.Router"
       url: string
     }
+    Bus: {
+      name: string
+      type: "sst.aws.Bus"
+    }
     Database: {
       clusterArn: string
       database: string
@@ -38,6 +42,33 @@ declare module "sst" {
     Store: {
       type: "sst.aws.Nextjs"
       url: string
+    }
+    StripeAnnualPrice: {
+      id: string
+      type: "stripe.index/price.Price"
+      unitAmount: number
+    }
+    StripeConnectWebhook: {
+      secret: string
+      type: "stripe.index/webhookEndpoint.WebhookEndpoint"
+    }
+    StripeMonthlyPrice: {
+      id: string
+      type: "stripe.index/price.Price"
+      unitAmount: number
+    }
+    StripeProduct: {
+      id: string
+      name: string
+      type: "stripe.index/product.Product"
+    }
+    StripeSecret: {
+      type: "sst.sst.Secret"
+      value: string
+    }
+    StripeWebhook: {
+      secret: string
+      type: "stripe.index/webhookEndpoint.WebhookEndpoint"
     }
     WebApp: {
       type: "sst.aws.Nextjs"

@@ -21,8 +21,18 @@ import {
 import { Input } from "@/components/input";
 import { createShop } from "@/app/actions";
 import { useRouter } from "next/navigation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/select";
 
-interface ShopFormProps extends React.HTMLAttributes<HTMLDivElement> {}
+interface ShopFormProps extends React.HTMLAttributes<HTMLDivElement> {
+  monthlyPrice: number;
+  annualPrice: number;
+}
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -30,15 +40,22 @@ const formSchema = z.object({
     .string()
     .min(3, "Must be at least 3 characters")
     .regex(/^[a-z]+[a-z0-9\-]+$/, "Must be lowercase, URL friendly."),
+  plan: z.enum(["monthly", "annual"]),
 });
 
-export function ShopForm({ className, ...props }: ShopFormProps) {
+export function ShopForm({
+  className,
+  monthlyPrice,
+  annualPrice,
+  ...props
+}: ShopFormProps) {
   const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       slug: "",
+      plan: "monthly",
     },
   });
 
@@ -52,6 +69,7 @@ export function ShopForm({ className, ...props }: ShopFormProps) {
     const result = await createShop({
       name: values.name,
       slug: values.slug,
+      annual: values.plan === "annual",
       baseUrl: `${window.location.protocol}//${window.location.host}`,
     });
     if (typeof result === "string") {
@@ -110,6 +128,40 @@ export function ShopForm({ className, ...props }: ShopFormProps) {
               <FormDescription>
                 Needs to be lowercase, unique, and URL friendly.
               </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="plan"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Plan</FormLabel>
+              <FormControl>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <SelectTrigger aria-label="Select plan">
+                    <SelectValue placeholder="Select plan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">
+                      Monthly{" "}
+                      <span className="text-muted-foreground">
+                        (${monthlyPrice.toFixed(2)}/month)
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="annual">
+                      Annual{" "}
+                      <span className="text-muted-foreground">
+                        (${annualPrice.toFixed(2)}/year)
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

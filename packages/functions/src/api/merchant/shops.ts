@@ -1,10 +1,12 @@
 import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
 import { Shop } from "@peasy-store/core/shop/index";
 import { assertActor, withActor } from "@peasy-store/core/actor";
+import { User } from "@peasy-store/core/user/index";
 import { Body, NotFound, Result } from "../common";
 import { HTTPException } from "hono/http-exception";
 import { Account } from "@peasy-store/core/account/index";
-import { User } from "@peasy-store/core/user/index";
+import { Stripe, stripe } from "@peasy-store/core/stripe/index";
+import { Resource } from "sst";
 
 export module ShopsApi {
   export const ShopSchema = Shop.Info.openapi("Shop");
@@ -50,13 +52,18 @@ export module ShopsApi {
           body: {
             content: {
               "application/json": {
-                schema: Shop.Info.pick({ name: true, slug: true }),
+                schema: Shop.Info.pick({ name: true, slug: true }).extend(
+                  Stripe.Checkout.shape,
+                ),
               },
             },
           },
         },
         responses: {
-          200: Result(ShopSchema, "Returns shop"),
+          200: Result(
+            ShopSchema.extend(Stripe.CheckoutSession.shape),
+            "Returns shop and Stripe checkout session URL",
+          ),
         },
       }),
       async (c) => {
@@ -66,13 +73,40 @@ export module ShopsApi {
         const slug = body.slug;
 
         const shopID = await Shop.create({ name, slug });
-        await withActor(
+        const checkoutSession = await withActor(
           {
             type: "system",
             properties: { shopID },
           },
           async () => {
             await User.create(actor.properties.email);
+
+            const subscription = await Stripe.get();
+            let customerID = subscription?.customerID;
+            if (!customerID) {
+              const customer = await stripe.customers.create({
+                name,
+                email: actor.properties.email,
+                metadata: { shopID },
+              });
+              customerID = customer.id;
+              await Stripe.setCustomerID(customerID);
+            }
+
+            const price = body.annual
+              ? Resource.StripeAnnualPrice.id
+              : Resource.StripeMonthlyPrice.id;
+
+            const session = await stripe.checkout.sessions.create({
+              mode: "subscription",
+              customer: customerID,
+              subscription_data: { metadata: { shopID } },
+              line_items: [{ price, quantity: 1 }],
+              success_url: `${body.successUrl}?session_id={CHECKOUT_SESSION_ID}`,
+              cancel_url: body.cancelUrl,
+            });
+
+            return session;
           },
         );
 
@@ -82,7 +116,8 @@ export module ShopsApi {
               id: shopID,
               name,
               slug,
-              active: true,
+              active: false,
+              url: checkoutSession.url,
             },
           },
           200,
@@ -95,7 +130,10 @@ export module ShopsApi {
         path: "/:id",
         request: Body(Shop.Info.pick({ name: true, slug: true })),
         responses: {
-          200: Result(ShopSchema, "Returns shop"),
+          200: Result(
+            ShopSchema,
+            "Returns shop and Stripe checkout session URL",
+          ),
         },
       }),
       async (c) => {

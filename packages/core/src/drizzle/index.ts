@@ -13,10 +13,6 @@ export const neonDatabaseUrl = useNeon
 export const db = useNeon
   ? drizzleNeon(new NeonPool({ connectionString: neonDatabaseUrl }))
   : drizzleAws(new RDSDataClient({}), {
-      // SOLUTION: #4 We get the database connection details from
-      // `Resource.Database`. Again, as a reminder, these are only
-      // available because we linked our database resource to our
-      // Lambda Functions (API and Auth).
       // @ts-ignore
       database: Resource.Database.database,
       // @ts-ignore

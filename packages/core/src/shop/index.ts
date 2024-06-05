@@ -4,10 +4,19 @@ import { shopTable } from "./shop.sql";
 import { z } from "zod";
 import { fn } from "../util/fn";
 import { createID } from "../util/id";
-import { createTransaction, getRowCount } from "../drizzle/transaction";
-import { assertActor, useActor } from "../actor";
+import {
+  createTransaction,
+  createTransactionEffect,
+  getRowCount,
+  useTransaction,
+} from "../drizzle/transaction";
+import { assertActor, useActor, withActor } from "../actor";
 import { userTable } from "../user/user.sql";
 import { HTTPException } from "hono/http-exception";
+import { event } from "../event";
+import { bus } from "sst/aws/bus";
+import { Resource } from "sst";
+import { Stripe } from "../stripe";
 
 export module Shop {
   export class ShopExistsError extends HTTPException {
@@ -15,6 +24,21 @@ export module Shop {
       super(400, { message: `There is already a shop named "${slug}"` });
     }
   }
+
+  export const Events = {
+    Created: event(
+      "shop.created",
+      z.object({
+        shopID: z.string().min(1),
+      }),
+    ),
+    Updated: event(
+      "shop.updated",
+      z.object({
+        shopID: z.string().min(1),
+      }),
+    ),
+  };
 
   export const Info = z.object({
     id: z.string(),
@@ -37,6 +61,11 @@ export module Shop {
           .onConflictDoNothing({ target: shopTable.slug });
         const rowCount = getRowCount(result);
         if (!rowCount) throw new ShopExistsError(slug);
+        await createTransactionEffect(() =>
+          withActor({ type: "system", properties: { shopID: id } }, () =>
+            bus.publish(Resource.Bus, Events.Created, { shopID: id }),
+          ),
+        );
       });
       return id;
     },
@@ -56,6 +85,11 @@ export module Shop {
           throw new HTTPException(500, {
             message: "Something went wrong updating the shop",
           });
+        await createTransactionEffect(() =>
+          withActor({ type: "system", properties: { shopID: result.id } }, () =>
+            bus.publish(Resource.Bus, Events.Updated, { shopID: result.id }),
+          ),
+        );
         return result;
       }),
   );
@@ -81,6 +115,24 @@ export module Shop {
         .where(eq(shopTable.id, row.shopID));
     });
   });
+
+  export async function updateActive() {
+    async function isActive() {
+      const customer = await Stripe.get();
+      const subscriptionStatus = customer?.standing;
+      return subscriptionStatus === "good";
+    }
+
+    return useTransaction(async (tx) =>
+      tx
+        .update(shopTable)
+        .set({ active: await isActive() })
+        .where(eq(shopTable.id, Shop.use()))
+        .returning()
+        .execute()
+        .then((rows) => rows.map(serialize).at(0)),
+    );
+  }
 
   export const fromID = fn(Info.shape.id, async (id) =>
     db

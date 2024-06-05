@@ -4,10 +4,15 @@ import { accountTable } from "./account.sql";
 import { z } from "zod";
 import { fn } from "../util/fn";
 import { createID } from "../util/id";
-import { useTransaction } from "../drizzle/transaction";
+import {
+  createTransactionEffect,
+  useTransaction,
+} from "../drizzle/transaction";
 import { userTable } from "../user/user.sql";
 import { shopTable } from "../shop/shop.sql";
 import { assertActor, useActor } from "../actor";
+import { event } from "../event";
+import { bus } from "sst/aws/bus";
 import { Resource } from "sst";
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
 import { Shop } from "../shop";
@@ -23,10 +28,32 @@ export module Account {
       .optional(),
   });
 
+  export const Events = {
+    // TODO: #7 Now we're defining our first event: "account.created"...
+    Created: event(
+      "account.created",
+      z.object({
+        id: Account.Info.shape.id,
+        email: Account.Info.shape.email,
+      }),
+    ),
+  };
+
   export const create = fn(Info.shape.email, async (email) => {
     return useTransaction(async (tx) => {
       const id = createID("account");
       await tx.insert(accountTable).values({ id, email });
+      await createTransactionEffect(() =>
+        // TODO: #8 ... and now, in the `create` function, we need
+        // to publish an Events.Created event to the bus we defined
+        // in the first step. The shape of the event is already defined,
+        // requiring the `id` and `email`, now see if you can publish.
+        //
+        // NOTE: The first function argument to `bus.publish` might
+        // trip you up, but I'll give you a hint: `Resource.`...
+        //
+        // bus.publish(...
+      );
       return id;
     });
   });

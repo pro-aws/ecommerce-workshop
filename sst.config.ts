@@ -13,6 +13,7 @@ export default $config({
           profile:
             input.stage === "production" ? "proaws-production" : "proaws-dev",
         },
+        "pulumi-stripe": true,
       },
     };
   },
