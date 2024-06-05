@@ -39,14 +39,17 @@ export module File {
             ? "media"
             : undefined;
         const path = `${prefix ? prefix + "/" : ""}${id}/${filename}`;
-        //TODO: #3 Now it's time to create the presigned URL so that we
-        // can send it down to the user for uploading their image.
-        // We need the Bucket name and we can get it from `Resource`.
-        // Also, for clues as to how we'll interact with the S3 SDK, note
-        // the unused imports at the top of the file. You'll also need
-        // to `pnpm install` any missing packages.
-        //
-        // const uploadUrl = ...
+        // SOLUTION: #3 We use `getSignedUrl` to get a presigned URL
+        // for a PutObject operation and pass it our Bucket name and
+        // the Key (path) we want to upload to.
+        const uploadUrl = await getSignedUrl(
+          s3,
+          new PutObjectCommand({
+            Bucket: Resource.CdnBucket.name,
+            Key: path,
+            ContentType: contentType,
+          }),
+        );
 
         const metadata: ImageMetadata = {
           type: "image",
@@ -110,14 +113,9 @@ export module File {
   ): z.infer<typeof Info> {
     return {
       id: input.id,
-      // TODO: #4 We want the url we return to users
-      // to include the Router URL so that users
-      // get images from the cache (CDN) rather than
-      // directly from the bucket. We have the path
-      // (`input.path`), we just need to get the
-      // Router url from `Resource` and append the path.
-      //
-      // url: ...,
+      // SOLUTION: #4 `Resource.CdnRouter.url` has our
+      // Router's URL because we linked it to our API function.
+      url: `${Resource.CdnRouter.url}/${input.path}`,
       filename: input.filename,
       contentType: input.contentType,
       createdAt: input.timeCreated.toISOString(),

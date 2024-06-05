@@ -1,16 +1,19 @@
-// TODO: #1 we need to create an S3 Bucket (sst.aws.Bucket)
-// for storing uploaded product images. As well, we want
-// to put a CloudFront Distribution (sst.aws.Router) in
-// front of the bucket for caching files close to our users.
-//
-// NOTE: If you have a custom domain, be sure to incorporate
-// it into the Router `domain`. Follow the pattern from ./api.
-//
-// export const cdnBucket = ...
-//
-// export const cdnRouter = ...
-//
-// (Optional) Export outputs for printing the URL to the CLI.
-// export const outputs = {
-//   cdn: cdnRouter.url,
-// };
+// SOLUTION: #1 Draw the rest of the f*****g owl.
+// Kidding, we created the sst.aws.Bucket and sst.aws.Router
+// and exported them. Note that the bucket is public due to
+// limitations with sst.aws.Router and origin access identities
+// but I expect this to change in the future (or get a new Component).
+import { domain } from "./dns";
+
+export const cdnBucket = new sst.aws.Bucket("CdnBucket", {
+  public: true,
+});
+
+export const cdnRouter = new sst.aws.Router("CdnRouter", {
+  domain: domain ? "cdn." + domain : undefined,
+  routes: { "/*": cdnBucket.domain.apply((d) => `https://${d}`) },
+});
+
+export const outputs = {
+  cdn: cdnRouter.url,
+};

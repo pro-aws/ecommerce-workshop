@@ -28,15 +28,6 @@ const api = new sst.aws.Function("Api", {
     product,
     monthlyPrice,
     annualPrice,
-    // TODO: #2 We link both the Bucket and Router here.
-    //
-    // Linking the Bucket gives our API Lambda Function
-    // the permissions to create presigned URLs for putting
-    // objects into the Bucket so that users can upload from
-    // their browser directly.
-    //
-    // Linking the Router will allow us to grab the URL, which
-    // we'll need in our API to return absolute URLs to the app.
     cdnBucket,
     cdnRouter,
     webhook,

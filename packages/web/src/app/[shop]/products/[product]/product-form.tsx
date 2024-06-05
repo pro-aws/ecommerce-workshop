@@ -123,8 +123,6 @@ export function ProductForm({
     await Promise.all(
       files.map(async (file) => {
         const { width, height, dataURL } = await getImageDimensions(file);
-        // TODO: #7 This is calling our API which ultimately
-        // runs the code we wrote earlier to generate a presigned URL...
         const result = await createFile({
           filename: file.name,
           contentType: file.type,
@@ -144,8 +142,6 @@ export function ProductForm({
         const optimisticImage = { ...result, optimisticUrl: dataURL };
         append(optimisticImage);
 
-        // #8 ... and here we do a PUT with our file contents
-        // to the `uploadUrl` returned from the API. Voila!
         // Upload the file to the S3 bucket
         await fetch(result.uploadUrl, {
           body: file,

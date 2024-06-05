@@ -19,8 +19,10 @@
   },
   "dependencies": {
     "@aws-sdk/client-rds-data": "3.577.0",
+    "@aws-sdk/client-s3": "^3.583.0",
     "@aws-sdk/client-sesv2": "^3.577.0",
     "@aws-sdk/credential-providers": "3.577.0",
+    "@aws-sdk/s3-request-presigner": "^3.583.0",
     "@hono/zod-openapi": "0.11.0",
     "drizzle-kit": "0.21.1",
     "drizzle-orm": "0.30.10",
