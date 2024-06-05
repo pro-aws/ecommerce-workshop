@@ -7,8 +7,6 @@ import { secret } from "./secret";
 export const auth = new sst.aws.Auth("Auth", {
   authenticator: {
     url: true,
-    // TODO: #3 Similarly, we link the bus to our Auth.authenticator
-    // so it can publish events as well
     link: [secret.StripeSecret, secret.NeonDatabaseUrl, database, bus, email],
     handler: "./packages/functions/src/auth.handler",
   },

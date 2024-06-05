@@ -8,7 +8,7 @@ import { eq, and } from "drizzle-orm";
 import { event } from "../event";
 import { Shop } from "../shop";
 
-export const stripe = new StripeSDK(Resource.StripeSecret.value, {
+export const stripe = new StripeSDK(Resource.StripeSecretNew.value, {
   httpClient: StripeSDK.createFetchHttpClient(),
 });
 

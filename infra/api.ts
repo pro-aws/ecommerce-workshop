@@ -21,8 +21,6 @@ const api = new sst.aws.Function("Api", {
     secret.StripeSecret,
     secret.NeonDatabaseUrl,
     database,
-    // TODO: #2 We link the event bus to our API function
-    // so that our API is able to publish to the EventBus.
     bus,
     email,
     auth,

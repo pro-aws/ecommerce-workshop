@@ -1,15 +1,25 @@
-// TODO: #1 First, we need to create an sst.aws.Bus
-// (EventBridge EventBus) that we can publish and subscribe
-// to. Then we want to subsribe to a Lambda Function handler
-// at "packages/functions/src/events/event.handler" where
-// we'll process events that we care about.
-//
-// NOTE: We'll need to link some resources into subscriber
-// so that the Lambda Function has permissions to take the
-// actions we plan to implement. I'm going to give you those
-// as you don't know what we're doing with the events, yet:
-// `[secret.StripeSecret, secret.NeonDatabaseUrl, database, email]`
-// (you'll need to import these).
+// SOLUTION: #1 We create and export `bus` and add a
+// subscriber with the appropriate resources linked.
+import { database } from "./database";
+import { email } from "./email";
+import { secret } from "./secret";
 
-// export const bus = ...
-// bus.subscribe(...
+export const bus = new sst.aws.Bus("Bus");
+bus.subscribe(
+  {
+    link: [secret.StripeSecret, secret.NeonDatabaseUrl, database, email],
+    handler: "packages/functions/src/events/event.handler",
+  },
+  // NOTE: We can also limit a subscriber to only be sent events
+  // based on a pattern defined like below. In our case we're keeping
+  // it simple with a big switch statement, but you may have a use case
+  // where the power of Rule matching is helpful or even necessary.
+  //
+  // {
+  //   pattern: {
+  //     detailType: ["shop.created"],
+  //   },
+  // },
+  //
+  // See https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html
+);

@@ -62,7 +62,7 @@ declare module "sst" {
       name: string
       type: "stripe.index/product.Product"
     }
-    StripeSecret: {
+    StripeSecretNew: {
       type: "sst.sst.Secret"
       value: string
     }

@@ -55,9 +55,6 @@ export module StripeWebhookApi {
                 properties: { shopID },
               },
               () =>
-                // TODO: #12 If you were curious where we're
-                // handling the incoming webhooks and putting the events
-                // onto the bus, it's right here.
                 bus.publish(
                   Resource.Bus,
                   Stripe.Events.CustomerSubscriptionEvent,

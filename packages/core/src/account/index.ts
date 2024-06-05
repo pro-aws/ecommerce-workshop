@@ -29,7 +29,6 @@ export module Account {
   });
 
   export const Events = {
-    // TODO: #7 Now we're defining our first event: "account.created"...
     Created: event(
       "account.created",
       z.object({
@@ -44,15 +43,10 @@ export module Account {
       const id = createID("account");
       await tx.insert(accountTable).values({ id, email });
       await createTransactionEffect(() =>
-        // TODO: #8 ... and now, in the `create` function, we need
-        // to publish an Events.Created event to the bus we defined
-        // in the first step. The shape of the event is already defined,
-        // requiring the `id` and `email`, now see if you can publish.
-        //
-        // NOTE: The first function argument to `bus.publish` might
-        // trip you up, but I'll give you a hint: `Resource.`...
-        //
-        // bus.publish(...
+        // SOLUTION: #8 We publish the event to the bus, providing
+        // the bus information from `Resource.Bus`. We also pass
+        // in our event defined above as well as the `id` and `email`.
+        bus.publish(Resource.Bus, Events.Created, { id, email }),
       );
       return id;
     });
